@@ -209,6 +209,15 @@ function SelfTests() {
   return null;
 }
 
+type DataContract = {
+  id: string;
+  service: string;
+  consumer: string;
+  schema: string;
+  sla: string;
+  status: "active" | "deprecated" | "draft";
+};
+
 const APPS: PortalApp[] = [
   {
     id: "assets.orchestrator",
@@ -232,6 +241,14 @@ const APPS: PortalApp[] = [
     category: "Assets",
     description: "Preview low-code nodes as reusable building blocks (UI + contract + examples).",
     tags: ["storybook", "examples"],
+    risk: "safe",
+  },
+  {
+    id: "assets.contracts",
+    title: "API Data Contracts",
+    category: "Assets",
+    description: "Manage service-to-service contracts, SLAs, and schema evolution.",
+    tags: ["schema", "SLA", "governance"],
     risk: "safe",
   },
   {
@@ -430,6 +447,47 @@ const RUNBOOKS: Runbook[] = [
 const INCIDENTS: IncidentBundle[] = [
   { id: "inc-2026-02-07-001", createdAt: nowIso(), source: "observability-snapshot", severity: "P2", summary: "Phase API intermittent 502; increased latency; user reports slow query." },
   { id: "inc-2026-02-06-003", createdAt: nowIso(), source: "oncall-digest", severity: "P3", summary: "Runbook missing for new error code SYS_HTTP_TLS_HANDSHAKE." },
+];
+
+const DATA_CONTRACTS: DataContract[] = [
+  {
+    id: "contract.user-profile",
+    service: "UserService",
+    consumer: "Frontend",
+    status: "active",
+    sla: "P99 < 100ms",
+    schema: `type UserProfile {
+  id: ID!
+  email: String! @sensitive
+  preferences: JSON
+  role: Role!
+}`,
+  },
+  {
+    id: "contract.order-events",
+    service: "OrderService",
+    consumer: "Analytics",
+    status: "active",
+    sla: "Delivery < 5min",
+    schema: `event OrderPlaced {
+  orderId: UUID!
+  items: [OrderItem!]!
+  total: Money!
+  timestamp: DateTime!
+}`,
+  },
+  {
+    id: "contract.legacy-billing",
+    service: "BillingService",
+    consumer: "PaymentGateway",
+    status: "deprecated",
+    sla: "Best Effort",
+    schema: `// DEPRECATED: Use v2.Charge instead
+message LegacyChargeRequest {
+  required string card_token = 1;
+  required int32 amount_cents = 2;
+}`,
+  },
 ];
 
 function groupByCategory(apps: PortalApp[]) {
@@ -1325,10 +1383,46 @@ export default function App() {
     </div>
   );
 
+  const renderDataContracts = () => (
+    <div className="space-y-4">
+      <Card title="API Data Contracts">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          {DATA_CONTRACTS.map((c) => (
+            <div key={c.id} className="rounded-2xl border border-zinc-200 bg-white p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="text-sm font-semibold text-zinc-900">{c.id}</div>
+                  <div className="mt-1 text-xs text-zinc-600">
+                    <span className="font-mono">{c.service}</span> → <span className="font-mono">{c.consumer}</span>
+                  </div>
+                </div>
+                <div className={cn("rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase",
+                  c.status === "active" ? "bg-green-100 text-green-700" :
+                    c.status === "deprecated" ? "bg-red-100 text-red-700" : "bg-zinc-100 text-zinc-700"
+                )}>
+                  {c.status}
+                </div>
+              </div>
+
+              <div className="mt-3 text-xs text-zinc-500">
+                SLA: <span className="font-mono text-zinc-700">{c.sla}</span>
+              </div>
+
+              <div className="mt-3 rounded-xl border border-zinc-200 bg-zinc-50 p-3 font-mono text-[10px] text-zinc-600 whitespace-pre-wrap">
+                {c.schema}
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+    </div>
+  );
+
   const renderContent = () => {
     if (activeAppId === "home") return renderOperationsCenter();
     if (activeAppId === "assets.orchestrator") return renderOrchestratorViewer();
     if (activeAppId === "assets.runbooks") return renderRunbooks();
+    if (activeAppId === "assets.contracts") return renderDataContracts();
     if (activeAppId === "assets.storybook") return renderStorybook();
     if (activeAppId === "exec.skills") return renderSkillCenter();
     if (activeAppId === "exec.gates") return renderGates();
