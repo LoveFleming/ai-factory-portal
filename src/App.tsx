@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { createOpencodeClient } from "@opencode-ai/sdk/client";
 
 /**
  * AI Software Factory — UI Portal (Preview Demo)
@@ -26,7 +27,7 @@ type PortalApp = {
   risk: Risk;
 };
 
-type SkillEngine = "deterministic" | "cline";
+type SkillEngine = "deterministic" | "cline" | "opencode";
 
 type Skill = {
   id: string;
@@ -140,9 +141,9 @@ function Card({
   right?: React.ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+    <div className="rounded-2xl border border-orange-100 bg-white/95 p-4 shadow-sm backdrop-blur-sm">
       <div className="mb-3 flex items-center justify-between gap-3">
-        <div className="text-sm font-semibold text-zinc-900">{title}</div>
+        <div className="text-sm font-semibold text-stone-900">{title}</div>
         {right}
       </div>
       {children}
@@ -168,10 +169,25 @@ function CodeBlock({ text }: { text: string }) {
 }
 
 function SidebarSection({ title, children }: { title: string; children: React.ReactNode }) {
+  const [isOpen, setIsOpen] = useState(true);
+
   return (
-    <div className="space-y-2">
-      <div className="px-2 text-[11px] font-semibold uppercase tracking-wide text-zinc-500">{title}</div>
-      {children}
+    <div className="space-y-1">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex w-full items-center justify-between px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-zinc-500 hover:text-stone-800"
+      >
+        <span>{title}</span>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 20 20"
+          fill="currentColor"
+          className={cn("w-3 h-3 transition-transform", isOpen ? "" : "-rotate-90")}
+        >
+          <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" />
+        </svg>
+      </button>
+      {isOpen && <div className="space-y-1 pt-1">{children}</div>}
     </div>
   );
 }
@@ -191,8 +207,8 @@ function NavItem({
     <button
       onClick={onClick}
       className={cn(
-        "flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2 text-left text-sm",
-        active ? "bg-zinc-900 text-white" : "bg-white text-zinc-800 hover:bg-zinc-50"
+        "flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2 text-left text-sm transition-all",
+        active ? "bg-gradient-to-r from-orange-400 to-amber-500 text-white shadow-sm" : "bg-white text-stone-700 hover:bg-orange-50 hover:text-orange-900"
       )}
     >
       <span className="truncate">{label}</span>
@@ -260,6 +276,14 @@ const APPS: PortalApp[] = [
     risk: "guarded",
   },
   {
+    id: "ai.opencodeconsole",
+    title: "Open Code Console",
+    category: "Execution",
+    description: "Access the Open Code CLI directly from the portal.",
+    tags: ["opencode", "cli", "console"],
+    risk: "safe",
+  },
+  {
     id: "exec.gates",
     title: "Gates & Lints",
     category: "Execution",
@@ -292,7 +316,7 @@ const SKILLS: Skill[] = [
     codename: "SpecScribe",
     skills: ["Extract user stories from requirements/legacy code", "Define API & Data contracts", "Draft flow specs"],
     outputs: ["spec.md", "flow.dsl", "contract.json"],
-    engine: "cline",
+    engine: "opencode",
     risk: "safe",
     description: "Specialized in transforming fuzzy requirements into technical specifications.",
   },
@@ -515,6 +539,12 @@ export default function App() {
   const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(INCIDENTS[0]?.id ?? null);
   const [viewingEmployee, setViewingEmployee] = useState<Skill | null>(null);
 
+  // Open Code Console state
+  const [openCodeSessionId, setOpenCodeSessionId] = useState<string | null>(null);
+  const [openCodeMessages, setOpenCodeMessages] = useState<Array<{ role: "user" | "assistant"; text: string; id?: string }>>([]);
+  const [openCodeInput, setOpenCodeInput] = useState("");
+  const [isOpenCodeLoading, setIsOpenCodeLoading] = useState(false);
+
   const appGroups = useMemo(() => groupByCategory(APPS), []);
 
   const filteredApps = useMemo(() => {
@@ -589,6 +619,66 @@ export default function App() {
     r.status = "running";
     pushLog(`[start] engine=${skill.engine} risk=${skill.risk}`);
 
+    if (skill.engine === "opencode") {
+      pushLog("[step] init Open Code client");
+      try {
+        const client = createOpencodeClient({ baseUrl: "http://127.0.0.1:4096" });
+
+        pushLog("[step] create session");
+        const session = await client.session.create({ body: { title: skill.title } });
+        if (!session.data) throw new Error("Failed to create session - no data returned");
+        pushLog(`[opencode] session created: ${session.data.id}`);
+
+        pushLog(`[step] send "hello world" prompt to agent`);
+        const result = await client.session.prompt({
+          path: { id: session.data.id },
+          body: {
+            noReply: true,
+            parts: [
+              {
+                type: "text",
+                text: skill.codename === "SpecScribe" ? "hello world" : `Run skill ${skill.codename}`
+              }
+            ]
+          }
+        });
+
+        pushLog(`[opencode] prompt accepted. Waiting for completion...`);
+
+        // Wait until session is idle/completed
+        let isDone = false;
+        while (!isDone) {
+          await new Promise(res => setTimeout(res, 1000));
+          const statusRes = await client.session.status({});
+          // The API returns an object where keys are session IDs and values are status objects
+          if (statusRes.data && (statusRes.data as any)[session.data.id]?.type === "idle") {
+            isDone = true;
+          }
+        }
+
+        // Fetch messages
+        const msgs = await client.session.messages({ path: { id: session.data.id } });
+        let aiOutput = "No messages found.";
+        if (msgs.data && msgs.data.length > 0) {
+          const lastMsg = msgs.data[msgs.data.length - 1];
+          const textParts = lastMsg.parts.filter(p => p.type === "text").map((p: any) => p.text);
+          aiOutput = textParts.join("\n");
+        }
+
+        r.aiJsonLines = [{ kind: "opencode-result", output: aiOutput }];
+        pushLog(`[opencode] session completed. Result read.`);
+        setRuns((xs) => xs.map((x) => (x.id === r.id ? { ...r } : x)));
+        // Also push the actual output to logs if desired
+        pushLog(`[opencode output]\n${aiOutput}`);
+        finish("success");
+      } catch (err: any) {
+        pushLog(`[opencode error] ${err.message}`);
+        r.aiJsonLines = [{ kind: "error", error: err.message || "Failed to connect to OpenCode CLI backend" }];
+        finish("failed");
+      }
+      return;
+    }
+
     const steps =
       skill.engine === "deterministic"
         ? ["validate inputs", "run tools", "collect artifacts", "record execution"]
@@ -631,7 +721,7 @@ export default function App() {
   }, [activeAppId]);
 
   const labelFor = (id: string) => {
-    if (id === "home") return "Home";
+    if (id === "home") return "Dashboard";
     return APPS.find((a) => a.id === id)?.title ?? id;
   };
 
@@ -642,11 +732,14 @@ export default function App() {
 
   const nav = useMemo(() => {
     return {
-      Assets: (appGroups.get("Assets") ?? []).map((a) => a.id),
-      Execution: (appGroups.get("Execution") ?? []).map((a) => a.id),
-      Monitoring: (appGroups.get("Monitoring") ?? []).map((a) => a.id),
-      Investigation: (appGroups.get("Investigation") ?? []).map((a) => a.id),
-    } as Record<AppCategory, string[]>;
+      Overview: ["home"],
+      Workbench: (appGroups.get("Assets") ?? []).map((a) => a.id),
+      "AI Collaboration": (appGroups.get("Execution") ?? []).map((a) => a.id),
+      "Ops Console": [
+        ...(appGroups.get("Monitoring") ?? []),
+        ...(appGroups.get("Investigation") ?? []),
+      ].map((a) => a.id),
+    } as Record<string, string[]>;
   }, [appGroups]);
 
   // Operations Center metrics
@@ -732,33 +825,19 @@ export default function App() {
   const renderOperationsCenter = () => {
     return (
       <div className="space-y-4">
-        <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+        <div className="rounded-2xl border border-orange-200/60 bg-gradient-to-br from-amber-50/50 to-orange-100/50 p-5 shadow-sm">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <div className="text-sm text-zinc-500">AI Software Factory</div>
-              <div className="mt-1 text-2xl font-bold text-zinc-900">Dashboard</div>
-              <div className="mt-2 text-sm text-zinc-600">
-                One screen to understand factory posture, runs, incidents, and next best actions — all inside dev sandbox.
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <span className="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs text-zinc-700">
-                Environment: <span className="font-mono">DEV_SANDBOX</span>
-              </span>
-              <span className="rounded-full border border-green-200 bg-green-50 px-3 py-1 text-xs text-green-700">
-                External access: <span className="font-semibold">LOCKED</span>
-              </span>
-              <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs text-amber-800">
-                Outbound Gate: <span className="font-semibold">MANUAL</span>
-              </span>
+              <div className="text-2xl font-bold text-zinc-900">Service Signals</div>
+              <div className="mt-1 text-sm font-medium text-zinc-600">AI Insights</div>
             </div>
           </div>
         </div>
 
         {/* Status Summary */}
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
-          <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm lg:col-span-2">
-            <div className="text-xs text-zinc-500">Factory Health</div>
+          <div className="rounded-2xl border border-orange-100 bg-white/90 p-4 shadow-sm backdrop-blur-sm lg:col-span-2">
+            <div className="text-xs text-orange-600/80 font-medium">Factory Health</div>
             <div className="mt-1 text-lg font-semibold">Healthy</div>
             <div className="mt-3 grid grid-cols-2 gap-2">
               <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-3">
@@ -772,9 +851,9 @@ export default function App() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
-            <div className="text-xs text-zinc-500">Runs (today)</div>
-            <div className="mt-1 text-lg font-semibold">{runs.length}</div>
+          <div className="rounded-2xl border border-orange-100 bg-white/90 p-4 shadow-sm backdrop-blur-sm">
+            <div className="text-xs text-amber-600/80 font-medium">Runs (today)</div>
+            <div className="mt-1 text-lg font-semibold text-stone-900">{runs.length}</div>
             <div className="mt-3 space-y-1 text-xs text-zinc-600">
               <div className="flex justify-between"><span>queued</span><span className="font-mono">{runCounts.queued}</span></div>
               <div className="flex justify-between"><span>running</span><span className="font-mono">{runCounts.running}</span></div>
@@ -783,9 +862,9 @@ export default function App() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
-            <div className="text-xs text-zinc-500">Incidents (today)</div>
-            <div className="mt-1 text-lg font-semibold">{INCIDENTS.length}</div>
+          <div className="rounded-2xl border border-orange-100 bg-white/90 p-4 shadow-sm backdrop-blur-sm">
+            <div className="text-xs text-rose-500/80 font-medium">Incidents (today)</div>
+            <div className="mt-1 text-lg font-semibold text-stone-900">{INCIDENTS.length}</div>
             <div className="mt-3 space-y-1 text-xs text-zinc-600">
               <div className="flex justify-between"><span>P1</span><span className="font-mono">{todayIncidentCounts.P1}</span></div>
               <div className="flex justify-between"><span>P2</span><span className="font-mono">{todayIncidentCounts.P2}</span></div>
@@ -793,9 +872,9 @@ export default function App() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
-            <div className="text-xs text-zinc-500">Runbook Coverage</div>
-            <div className="mt-1 text-lg font-semibold">92%</div>
+          <div className="rounded-2xl border border-orange-100 bg-white/90 p-4 shadow-sm backdrop-blur-sm">
+            <div className="text-xs text-orange-600/80 font-medium">Runbook Coverage</div>
+            <div className="mt-1 text-lg font-semibold text-stone-900">92%</div>
             <div className="mt-3 text-xs text-zinc-600">
               Q4 will fail if any errorCode has no runbook mapping.
             </div>
@@ -1094,21 +1173,21 @@ export default function App() {
                 e.stopPropagation();
                 setViewingEmployee(s);
               }}
-              className="flex flex-col justify-between rounded-xl border border-zinc-200 bg-zinc-50 p-3 text-left transition-all hover:bg-white hover:shadow-md"
+              className="flex flex-col justify-between rounded-xl border border-orange-100 bg-orange-50/50 p-3 text-left transition-all hover:bg-white hover:shadow-md hover:border-orange-200"
             >
               <div>
                 <div className="flex items-center justify-between">
-                  <div className="text-sm font-semibold text-zinc-900">{s.title}</div>
+                  <div className="text-sm font-semibold text-stone-900">{s.title}</div>
                   <RiskBadge risk={s.risk} />
                 </div>
-                <div className="mt-1 text-xs text-zinc-500 line-clamp-2">{s.description}</div>
+                <div className="mt-1 text-xs text-stone-500 line-clamp-2">{s.description}</div>
               </div>
               <div className="mt-3 flex items-center justify-between">
-                <span className="rounded bg-zinc-200 px-1.5 py-0.5 text-[10px] text-zinc-600 font-mono">
+                <span className="rounded bg-orange-100 px-1.5 py-0.5 text-[10px] text-orange-700 font-mono">
                   {s.codename}
                 </span>
                 <div
-                  className="rounded-lg bg-zinc-900 px-2 py-1 text-[10px] text-white shadow-sm hover:bg-zinc-700"
+                  className="rounded-lg bg-gradient-to-r from-orange-500 to-amber-500 px-2 py-1 text-[10px] text-white shadow-sm hover:from-orange-600 hover:to-amber-600"
                   onClick={(e) => {
                     e.stopPropagation();
                     void runSkill(s);
@@ -1418,8 +1497,126 @@ export default function App() {
     </div>
   );
 
+  const handleOpenCodeSubmit = async () => {
+    if (!openCodeInput.trim() || isOpenCodeLoading) return;
+    const inputText = openCodeInput.trim();
+    setOpenCodeInput("");
+    setOpenCodeMessages((msg) => [...msg, { role: "user", text: inputText, id: "user-" + Date.now() }]);
+    setIsOpenCodeLoading(true);
+
+    try {
+      const client = createOpencodeClient({ baseUrl: "http://127.0.0.1:4096" });
+      let sid = openCodeSessionId;
+
+      if (!sid) {
+        const session = await client.session.create({ body: { title: "Console Session" } });
+        if (!session.data) throw new Error("Failed to create session");
+        sid = session.data.id;
+        setOpenCodeSessionId(sid);
+      }
+
+      let isDone = false;
+      const promptPromise = client.session.prompt({
+        path: { id: sid },
+        body: {
+          noReply: false,
+          parts: [{ type: "text", text: inputText }],
+        },
+      }).then(() => {
+        isDone = true;
+      }).catch((err) => {
+        isDone = true;
+        throw err;
+      });
+
+      const pollMessages = async () => {
+        const msgs = await client.session.messages({ path: { id: sid } });
+        if (msgs.data) {
+          setOpenCodeMessages((prev) => {
+            const next = [...prev];
+            for (const m of msgs.data) {
+              if (m.info?.role === "assistant") {
+                const textParts = m.parts.filter((p: any) => p.type === "text").map((p: any) => p.text);
+                if (textParts.length > 0) {
+                  const text = textParts.join("\\n");
+                  const existingIdx = next.findIndex((x) => x.id === m.info.id);
+                  if (existingIdx >= 0) {
+                    next[existingIdx].text = text;
+                  } else {
+                    next.push({ role: "assistant", text, id: m.info.id });
+                  }
+                }
+              }
+            }
+            return next;
+          });
+        }
+      };
+
+      while (!isDone) {
+        await pollMessages();
+        await new Promise((res) => setTimeout(res, 500));
+      }
+
+      // One final fetch to ensure we have the complete message
+      await pollMessages();
+      await promptPromise;
+
+    } catch (err: any) {
+      setOpenCodeMessages((msg) => [...msg, { role: "assistant", text: `Error: ${err.message}` }]);
+    } finally {
+      setIsOpenCodeLoading(false);
+    }
+  };
+
+  const renderOpenCodeConsole = () => (
+    <div className="space-y-4">
+      <Card title="Open Code Console">
+        <div className="text-sm text-zinc-600">
+          Welcome to the Open Code Console. Start collaborating with AI directly from here.
+        </div>
+        <div className="mt-4 rounded-xl bg-[#1e1e1e] p-4 font-mono text-sm text-zinc-300 flex flex-col gap-4">
+          <div className="max-h-[500px] overflow-y-auto space-y-4 pr-2 pb-2">
+            {openCodeMessages.length === 0 && (
+              <div className="text-zinc-500 italic">No messages yet. Send a prompt to start.</div>
+            )}
+            {openCodeMessages.map((msg, i) => (
+              <div key={i} className="flex gap-2">
+                <span className={msg.role === "user" ? "text-blue-400 font-bold" : "text-[#ffbd2e] font-bold"}>
+                  {msg.role === "user" ? "USER" : "AGENT"}➜
+                </span>
+                <span className="whitespace-pre-wrap">{msg.text}</span>
+              </div>
+            ))}
+            {isOpenCodeLoading && (
+              <div className="flex gap-2">
+                <span className="text-[#ffbd2e] font-bold">AGENT➜</span>
+                <span className="animate-pulse text-zinc-500">_ computing...</span>
+              </div>
+            )}
+          </div>
+          <div className="flex items-center gap-2 border-t border-zinc-700 pt-4">
+            <span className="text-[#4af626]">➜</span>
+            <input
+              type="text"
+              value={openCodeInput}
+              onChange={(e) => setOpenCodeInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleOpenCodeSubmit();
+              }}
+              disabled={isOpenCodeLoading}
+              placeholder="Type your prompt here..."
+              className="w-full bg-transparent outline-none disabled:opacity-50"
+            />
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+
   const renderContent = () => {
     if (activeAppId === "home") return renderOperationsCenter();
+    if (activeAppId === "ai.opencodeconsole") return renderOpenCodeConsole();
     if (activeAppId === "assets.orchestrator") return renderOrchestratorViewer();
     if (activeAppId === "assets.runbooks") return renderRunbooks();
     if (activeAppId === "assets.contracts") return renderDataContracts();
@@ -1433,7 +1630,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-50 text-zinc-900">
+    <div className="min-h-screen bg-orange-50/40 text-stone-900 selection:bg-orange-200">
       {/* Top Header */}
 
       <div className="mx-auto flex max-w-7xl gap-4 p-4">
@@ -1441,7 +1638,7 @@ export default function App() {
         <aside className="w-72 shrink-0 space-y-6">
           <div className="mb-8 px-2">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-zinc-800 to-zinc-950 text-white shadow-md">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-md shadow-orange-500/20">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   viewBox="0 0 24 24"
@@ -1463,30 +1660,16 @@ export default function App() {
                 </svg>
               </div>
               <div>
-                <div className="text-lg font-bold tracking-tight text-zinc-900">Factory Portal</div>
-                <div className="text-xs font-medium text-zinc-500">AI Software Factory</div>
+                <div className="text-lg font-bold tracking-tight text-stone-900">My Factory</div>
+                <div className="text-xs font-medium text-stone-900">Workbench · Ops Console</div>
+                <div className="text-xs text-zinc-500">AI Collaboration</div>
               </div>
             </div>
 
-            <button
-              onClick={() => setActiveAppId("home")}
-              className={cn(
-                "mt-6 flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-semibold transition-all",
-                activeAppId === "home"
-                  ? "bg-zinc-900 text-white shadow-md ring-1 ring-zinc-900/10"
-                  : "bg-white text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 shadow-sm ring-1 ring-zinc-200"
-              )}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 opacity-70">
-                <path d="M10 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z" />
-                <path fillRule="evenodd" d="M.664 10.59a1.651 1.651 0 010-1.186A10.004 10.004 0 0110 3c4.257 0 7.893 2.66 9.336 6.41.147.381.146.804 0 1.186A10.004 10.004 0 0110 17c-4.257 0-7.893-2.66-9.336-6.41zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
-              </svg>
-              Dashboard
-            </button>
           </div>
 
-          <div className="space-y-4 rounded-2xl border border-zinc-200 bg-white p-3 shadow-sm">
-            {(Object.keys(nav) as AppCategory[]).map((cat) => (
+          <div className="space-y-4 rounded-2xl border border-orange-100 bg-white/80 p-3 shadow-sm backdrop-blur-sm">
+            {(Object.keys(nav) as string[]).map((cat) => (
               <SidebarSection key={cat} title={cat}>
                 <div className="space-y-1">
                   {(nav[cat] ?? []).map((id) => {
