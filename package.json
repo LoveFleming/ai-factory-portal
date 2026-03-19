@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "concurrently -k -n \"UI,CLI\" -c \"cyan,magenta\" \"vite\" \"npx @opencode-ai/cli server --port 4096\"",
+    "dev": "concurrently -k -n \"UI,CLI\" -c \"cyan,magenta\" \"vite\" \"opencode server --port 4096\"",
     "build": "tsc -b && vite build",
     "preview": "vite preview"
   },
