@@ -129,7 +129,7 @@ export default function OpenCodeConsole({ selectedEmployee, className, disableCa
                         onChange={(e) => {
                             setOpenCodeInput(e.target.value);
                             e.target.style.height = "auto";
-                            e.target.style.height = Math.min(e.target.scrollHeight, 200) + "px";
+                            e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px";
                         }}
                         onKeyDown={(e) => {
                             if (e.key === "Enter" && !e.shiftKey) {
@@ -141,7 +141,7 @@ export default function OpenCodeConsole({ selectedEmployee, className, disableCa
                         }}
                         disabled={isOpenCodeLoading}
                         placeholder={selectedEmployee ? `Type your prompt for ${selectedEmployee.codename}... (Shift+Enter for newline)` : "Type your prompt here... (Shift+Enter for newline)"}
-                        className="flex-1 bg-transparent outline-none disabled:opacity-50 resize-none min-h-[24px] max-h-[200px] overflow-y-auto leading-normal py-0"
+                        className="flex-1 bg-transparent outline-none disabled:opacity-50 resize-none min-h-[24px] max-h-[120px] overflow-y-auto leading-normal py-0"
                         rows={1}
                     />
                 </div>
