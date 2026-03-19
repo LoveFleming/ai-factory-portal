@@ -1,0 +1,18 @@
+{
+    "id": "ai.runbook",
+    "title": "Runbook Maker",
+    "codename": "RunbookMedic",
+    "imageUrl": "/crew/runbook_medic_1772459328816.png",
+    "skills": [
+        "Map error codes to runbooks",
+        "Template troubleshooting steps",
+        "Closed-loop updates (Q4)"
+    ],
+    "outputs": [
+        "runbook.md",
+        "runbook_fix_pr.md"
+    ],
+    "engine": "cline",
+    "risk": "safe",
+    "description": "Keeps operational knowledge bases up-to-date and actionable."
+}

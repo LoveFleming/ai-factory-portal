@@ -1,0 +1,19 @@
+{
+    "id": "ai.rca",
+    "title": "Incident Investigator",
+    "codename": "RCA Detective",
+    "imageUrl": "/crew/rca_detective_1772459361421.png",
+    "skills": [
+        "Analyze incident bundles",
+        "Correlate traces/logs/metrics",
+        "Infer root causes and propose fixes"
+    ],
+    "outputs": [
+        "rca_draft.md",
+        "action_items.md",
+        "runbook_patch.md"
+    ],
+    "engine": "cline",
+    "risk": "guarded",
+    "description": "Investigates production incidents to find root causes."
+}

@@ -1,0 +1,19 @@
+{
+    "id": "ai.flow",
+    "title": "Flow Orchestrator Reviewer",
+    "codename": "FlowInspector",
+    "imageUrl": "/crew/flow_inspector_1772459346076.png",
+    "skills": [
+        "Review flow spec/DSL",
+        "Check node responsibility boundaries",
+        "Highlight key risk points"
+    ],
+    "outputs": [
+        "flow_review_comments.md",
+        "observability_suggestions.json",
+        "refactoring_list.md"
+    ],
+    "engine": "deterministic",
+    "risk": "safe",
+    "description": "Validates orchestration logic and architectural patterns."
+}

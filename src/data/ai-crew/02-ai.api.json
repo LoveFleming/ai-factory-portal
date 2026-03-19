@@ -1,0 +1,20 @@
+{
+    "id": "ai.api",
+    "title": "API Designer",
+    "codename": "ApiForge",
+    "imageUrl": "/crew/api_forge_1772459295214.png",
+    "skills": [
+        "REST resource design",
+        "Error code cataloging (BIZ/SYS/ORCH)",
+        "Versioning strategy",
+        "Compatibility checks"
+    ],
+    "outputs": [
+        "OpenAPI spec",
+        "error_code_catalog.json",
+        "breaking_change_report.md"
+    ],
+    "engine": "deterministic",
+    "risk": "safe",
+    "description": "Architects robust and consistent API interfaces."
+}

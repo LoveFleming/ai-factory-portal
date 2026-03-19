@@ -1,0 +1,19 @@
+{
+    "id": "ai.contract",
+    "title": "Data Contract Guardian",
+    "codename": "ContractSentinel",
+    "imageUrl": "/crew/contract_sentinel_1772459183414.png",
+    "skills": [
+        "Schema validation",
+        "Input/Output contract gating (Q1)",
+        "Edge case coverage analysis"
+    ],
+    "outputs": [
+        "contract_lint_report.json",
+        "root_cause_analysis.txt",
+        "fix_suggestions.md"
+    ],
+    "engine": "deterministic",
+    "risk": "safe",
+    "description": "Ensures data integrity and strict schema compliance."
+}

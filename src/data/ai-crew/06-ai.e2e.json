@@ -1,0 +1,19 @@
+{
+    "id": "ai.e2e",
+    "title": "E2E Runner",
+    "codename": "PlaywrightPilot",
+    "imageUrl": "/crew/playwright_pilot_1772459312560.png",
+    "skills": [
+        "Generate/Maintain E2E scripts",
+        "Golden Path verification",
+        "Regression testing strategy (Q3)"
+    ],
+    "outputs": [
+        "playwright_scripts.ts",
+        "failure_reproduction_steps.md",
+        "flaky_test_report.json"
+    ],
+    "engine": "deterministic",
+    "risk": "safe",
+    "description": "Orchestrates end-to-end user journey tests."
+}

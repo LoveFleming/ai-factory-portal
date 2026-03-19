@@ -1,0 +1,18 @@
+{
+    "id": "ai.unit",
+    "title": "Unit Test Assistant",
+    "codename": "UnitSmith",
+    "imageUrl": "/crew/unit_smith_1772459203749.png",
+    "skills": [
+        "Generate unit tests from spec",
+        "Mock external dependencies",
+        "Enforce Sonar/style guides"
+    ],
+    "outputs": [
+        "*Test.ts / *Test.java",
+        "test_case_list.md"
+    ],
+    "engine": "cline",
+    "risk": "safe",
+    "description": "Writes robust unit tests to verify component logic."
+}

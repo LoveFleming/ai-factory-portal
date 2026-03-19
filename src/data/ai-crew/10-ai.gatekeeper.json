@@ -1,0 +1,19 @@
+{
+    "id": "ai.gatekeeper",
+    "title": "Safety Gatekeeper",
+    "codename": "OutboundGate",
+    "imageUrl": "/crew/outbound_gate_1772459434507.png",
+    "skills": [
+        "Audit external interactions (PR/API)",
+        "Manage allowlists/denylists",
+        "Maintain audit trails"
+    ],
+    "outputs": [
+        "approval_decision.json",
+        "least_privilege_policy.json",
+        "audit_log.json"
+    ],
+    "engine": "deterministic",
+    "risk": "external",
+    "description": "Guards the factory boundary and enforces safety policies."
+}

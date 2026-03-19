@@ -1,0 +1,19 @@
+{
+    "id": "ai.spec",
+    "title": "Spec Writer",
+    "codename": "SpecScribe",
+    "imageUrl": "/crew/spec_scribe_1772459165750.png",
+    "skills": [
+        "Extract user stories from requirements/legacy code",
+        "Define API & Data contracts",
+        "Draft flow specs"
+    ],
+    "outputs": [
+        "spec.md",
+        "flow.dsl",
+        "contract.json"
+    ],
+    "engine": "opencode",
+    "risk": "safe",
+    "description": "Specialized in transforming fuzzy requirements into technical specifications."
+}

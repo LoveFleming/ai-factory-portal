@@ -1,1 +1,1 @@
-{"root":["./src/app.tsx","./src/main.tsx"],"version":"5.9.3"}
+{"root":["./src/app.tsx","./src/main.tsx","./src/components/ui/shared.tsx","./src/data/mockdata.ts","./src/pages/aicrew.tsx","./src/pages/datacontracts.tsx","./src/pages/employeeworkspace.tsx","./src/pages/gates.tsx","./src/pages/monitoring.tsx","./src/pages/opencodeconsole.tsx","./src/pages/operationscenter.tsx","./src/pages/orchestratorviewer.tsx","./src/pages/rca.tsx","./src/pages/runbooks.tsx","./src/pages/storybook.tsx","./src/types/index.ts","./src/utils/index.ts"],"version":"5.9.3"}

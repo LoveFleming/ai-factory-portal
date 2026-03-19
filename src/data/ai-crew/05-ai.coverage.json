@@ -1,0 +1,18 @@
+{
+    "id": "ai.coverage",
+    "title": "Coverage Analyst",
+    "codename": "CoverageHawk",
+    "imageUrl": "/crew/coverage_hawk_1772459220815.png",
+    "skills": [
+        "Analyze JaCoCo/coverage reports",
+        "Identify uncovered branches",
+        "Generate minimal incremental test strategies"
+    ],
+    "outputs": [
+        "coverage_gap_list.json",
+        "path_to_100_percent.md"
+    ],
+    "engine": "deterministic",
+    "risk": "safe",
+    "description": "Hunts down untested code paths to ensure full coverage."
+}
