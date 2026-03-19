@@ -45,6 +45,7 @@ export default function OpenCodeConsole({ selectedEmployee, className, disableCa
                 path: { id: sid },
                 body: {
                     noReply: false,
+                    system: selectedEmployee ? `You are ${selectedEmployee.codename}, a specialized AI employee (${selectedEmployee.title}).\n\nRole description: ${selectedEmployee.description}\n\nYour specific skills include:\n- ${selectedEmployee.skills.join('\n- ')}\n\nYou are expected to produce the following outputs:\n- ${selectedEmployee.outputs.join('\n- ')}\n\nStay in character and assist the user specifically using your skills and role boundaries.` : undefined,
                     parts: [{ type: "text", text: inputText }],
                 },
             }).then(() => {
