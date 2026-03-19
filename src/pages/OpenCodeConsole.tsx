@@ -122,18 +122,27 @@ export default function OpenCodeConsole({ selectedEmployee, className, disableCa
                         </div>
                     )}
                 </div>
-                <div className="flex items-center gap-2 border-t border-zinc-700 pt-4">
-                    <span className="text-[#4af626]">➜</span>
-                    <input
-                        type="text"
+                <div className="flex items-start gap-2 border-t border-zinc-700 pt-4 shrink-0">
+                    <span className="text-[#4af626] mt-0.5">➜</span>
+                    <textarea
                         value={openCodeInput}
-                        onChange={(e) => setOpenCodeInput(e.target.value)}
+                        onChange={(e) => {
+                            setOpenCodeInput(e.target.value);
+                            e.target.style.height = "auto";
+                            e.target.style.height = Math.min(e.target.scrollHeight, 200) + "px";
+                        }}
                         onKeyDown={(e) => {
-                            if (e.key === "Enter") handleOpenCodeSubmit();
+                            if (e.key === "Enter" && !e.shiftKey) {
+                                e.preventDefault();
+                                handleOpenCodeSubmit();
+                                // Reset height after submit
+                                e.currentTarget.style.height = "auto";
+                            }
                         }}
                         disabled={isOpenCodeLoading}
-                        placeholder={selectedEmployee ? `Type your prompt for ${selectedEmployee.codename}...` : "Type your prompt here..."}
-                        className="w-full bg-transparent outline-none disabled:opacity-50"
+                        placeholder={selectedEmployee ? `Type your prompt for ${selectedEmployee.codename}... (Shift+Enter for newline)` : "Type your prompt here... (Shift+Enter for newline)"}
+                        className="flex-1 bg-transparent outline-none disabled:opacity-50 resize-none min-h-[24px] max-h-[200px] overflow-y-auto leading-normal py-0"
+                        rows={1}
                     />
                 </div>
             </div>

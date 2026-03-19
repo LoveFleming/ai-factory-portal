@@ -31,7 +31,7 @@ export default function EmployeeWorkspace({ employeeId }: EmployeeWorkspaceProps
     return (
         <div className="flex flex-col flex-1 min-h-0 gap-2 relative">
             {/* Top panel: Employee header and skills */}
-            <Card className="shrink-0 p-4">
+            <Card className="flex-1 overflow-y-auto min-h-0 p-4">
                 <div className="flex gap-6 items-start">
                     {/* Left: Employee Photo */}
                     <div className="w-48 h-48 shrink-0 rounded-3xl overflow-hidden bg-orange-50/50 border border-orange-100 flex items-center justify-center p-4 shadow-sm">
@@ -79,8 +79,8 @@ export default function EmployeeWorkspace({ employeeId }: EmployeeWorkspaceProps
             </Card>
 
             {/* Middle & Bottom panel: Large AI Console */}
-            {/* OpenCodeConsole is flex-1 to take up all the vertical space. Console at top, input at bottom */}
-            <Card className="flex-1 flex flex-col overflow-hidden p-0 border-0 bg-transparent shadow-none">
+            {/* OpenCodeConsole is fixed size, input at bottom */}
+            <Card className="shrink-0 h-[450px] flex flex-col overflow-hidden p-0 border-0 bg-transparent shadow-none">
                 <OpenCodeConsole selectedEmployee={employee} className="flex-1 overflow-hidden m-0" disableCard />
             </Card>
         </div>
