@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Card, RiskBadge, cn } from "../components/ui/shared";
 import { Skill } from "../types";
+import { SKILLS } from "../data/mockData";
 import CrewEditor from "../components/CrewEditor";
 import Icon from "../components/Icon";
 
@@ -21,13 +22,12 @@ export default function AICrew({ openEmployee, onCrewChanged }: AICrewProps) {
             if (resp.ok) {
                 const data = await resp.json();
                 setCrew(data);
+            } else {
+                setCrew(SKILLS);
             }
         } catch {
-            // fallback: try loading from static files
-            try {
-                const resp = await fetch("http://127.0.0.1:4097/crew");
-                // won't work, just leave empty
-            } catch { /* */ }
+            // fallback: use bundled static data
+            setCrew(SKILLS);
         }
         setLoading(false);
     }, []);
