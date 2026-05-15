@@ -36,7 +36,7 @@ export const APPS: PortalApp[] = [
     },
 ];
 
-const crewModules = import.meta.glob('../../../data/crew/*.json', { eager: true });
+const crewModules = import.meta.glob('./crew/*.json', { eager: true });
 export const SKILLS: Skill[] = Object.values(crewModules).map((mod: any) => mod.default || mod) as Skill[];
 
 export const FLOWS: FlowSpec[] = [
