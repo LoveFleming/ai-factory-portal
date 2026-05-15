@@ -52,7 +52,7 @@ export function SidebarSection({ title, children }: { title: string; children: R
         <div className="space-y-0.5 mt-2">
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="flex w-full items-center px-4 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-100 transition-colors"
+                className="flex w-full items-center px-4 py-2 text-sm font-medium text-stone-600 hover:bg-orange-50 transition-colors"
             >
                 <div className="flex items-center gap-3">
                     <svg
@@ -88,8 +88,8 @@ export function NavItem({
             className={cn(
                 "flex w-full items-center justify-between pl-11 pr-4 py-2 text-left text-sm transition-colors",
                 active
-                    ? "bg-zinc-100 text-stone-900 border-l-4 border-blue-600 pl-[40px] font-medium"
-                    : "bg-transparent text-zinc-600 hover:bg-zinc-50 border-l-4 border-transparent"
+                    ? "bg-orange-50 text-orange-700 border-l-4 border-orange-500 pl-[40px] font-semibold"
+                    : "bg-transparent text-stone-500 hover:bg-orange-50 border-l-4 border-transparent"
             )}
         >
             <span className="truncate">{label}</span>

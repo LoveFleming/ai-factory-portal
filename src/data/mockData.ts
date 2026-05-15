@@ -3,38 +3,6 @@ import { nowIso } from "../utils";
 
 export const APPS: PortalApp[] = [
     {
-        id: "assets.orchestrator",
-        title: "Orchestrator Viewer",
-        category: "Assets",
-        description: "Browse flows, visualize nodes/gates, inspect execution contracts and golden path.",
-        tags: ["flow spec", "contracts", "viewer"],
-        risk: "safe",
-    },
-    {
-        id: "assets.runbooks",
-        title: "Runbook Library",
-        category: "Assets",
-        description: "Search runbooks by error code, component, symptom. Keep troubleshooting closed-loop.",
-        tags: ["error code", "RCA", "closed-loop"],
-        risk: "safe",
-    },
-    {
-        id: "assets.storybook",
-        title: "Node Storybook",
-        category: "Assets",
-        description: "Preview low-code nodes as reusable building blocks (UI + contract + examples).",
-        tags: ["storybook", "examples"],
-        risk: "safe",
-    },
-    {
-        id: "assets.contracts",
-        title: "API Data Contracts",
-        category: "Assets",
-        description: "Manage service-to-service contracts, SLAs, and schema evolution.",
-        tags: ["schema", "SLA", "governance"],
-        risk: "safe",
-    },
-    {
         id: "exec.skills",
         title: "AI Crew",
         category: "Execution",
@@ -68,7 +36,7 @@ export const APPS: PortalApp[] = [
     },
 ];
 
-const crewModules = import.meta.glob('./ai-crew/*.json', { eager: true });
+const crewModules = import.meta.glob('../../../data/crew/*.json', { eager: true });
 export const SKILLS: Skill[] = Object.values(crewModules).map((mod: any) => mod.default || mod) as Skill[];
 
 export const FLOWS: FlowSpec[] = [
